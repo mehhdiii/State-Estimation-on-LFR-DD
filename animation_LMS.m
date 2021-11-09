@@ -15,7 +15,7 @@ d2 = d/2;
 r = 5*d;
 rw = 1/2;
 q = 0.85;
-T = 0.3;
+T = 0.9;
 ellipse_a = 1;
 ellipse_b = 1.2;
 bb = (ellipse_b+ellipse_a/2)*r;
@@ -42,16 +42,17 @@ xhat_last = [x_pos; y_pos; phi];
 % dev_w = 1e-2;
 % dev_v = 1e-2;
 trajectory =zeros(2,N);
+trajectory_KF = zeros(2, N); 
 
 RC_Sens = [cos(phi) -sin(phi); ...
     sin(phi) cos(phi)]*[Sen_X; Sen_Y]+[x_pos;y_pos];
 
-%stochastic setup for Input:
-kR = 1e-2; kL = 1e-2;
+%stochastic setup:
+kR = 1e-3; kL = 1e-3;
 P_last = eye(3);
 
 %stochastic setup for observation: 
-R_k = diag([1e-4 1e-4]);
+R_k = diag([1e-3 1e-3]);
 
 for ii = 1:N
     
@@ -62,18 +63,17 @@ for ii = 1:N
     [delR, delL] = LFR_controller(fL,fR,fC, dd);
     
     %calculate input's Covariance matrix: 
-    Q_input = diag([kR*delR kL*delL]);
+    Q_input = diag([kR*abs(delR) kL*abs(delL)]);
     
     %calculating velocities:
     vee = rw*(delR+delL)/2 +randn*sqrt(Q_input(1,1)); % noise added
     omega = rw*(delR-delL)/2/b +randn*sqrt(Q_input(2,2)); % noise added
     
-    %Noisy plant/odometry values:
+    %Plant:
     delta_phi = T*omega;
     delta_x = 2*vee/omega*sin(delta_phi/2)*cos(phi+delta_phi/2);
     delta_y = 2*vee/omega*sin(delta_phi/2)*sin(phi+delta_phi/2);
     
-    %updated x_{k+1} vector:
     x_pos = x_pos + delta_x;
     y_pos = y_pos + delta_y;
     phi = wrapToPi(phi + delta_phi);
@@ -86,23 +86,31 @@ for ii = 1:N
     Q_k = B*sigma_*B';
     
     %observation: Assume radar observation 
-    y_k = [sqrt(x_pos^2+y_pos^2); atan2(y_pos, x_pos)] + sqrt(R_k)*randn(2, 1);
+    y_k = [sqrt(x_pos^2+y_pos^2); atan(y_pos/x_pos)] + sqrt(R_k)*randn(2, 1);
     
     %KF:
-    
     [xhat_optimal,P_optimal] = KalmanFilter(y_k, Q_k, R_k, xhat_last, P_last, vee, omega, T);
     xhat_last = xhat_optimal; 
-    P_last = P_optimal; 
+    P_last = P_optimal;
     
     
-    %Transformation matrices
+    %Transformation matrices: Unfiltered
     RC_Sens = [cos(phi) -sin(phi); ...
-        sin(phi) cos(phi)]*[Sen_X; Sen_Y]+[x_pos;y_pos];
+        sin(phi) cos(phi)]*[Sen_X; Sen_Y]+[x_pos;y_pos]; 
     
     RC_Body = [cos(phi) -sin(phi); ...
         sin(phi) cos(phi)]*[Body_X;Body_Y]+[x_pos;y_pos];
     
     trajectory(:,ii) =[RC_Sens(1,3); RC_Sens(2,3)];
+    
+    %Transformation matrices: Filtered
+    RC_Sens_KF = [cos(xhat_optimal(3)) -sin(xhat_optimal(3)); ...
+        sin(xhat_optimal(3)) cos(xhat_optimal(3))]*[Sen_X; Sen_Y]+[xhat_optimal(1);xhat_optimal(2)]; 
+    
+    RC_Body_KF = [cos(xhat_optimal(3)) -sin(xhat_optimal(3)); ...
+        sin(xhat_optimal(3)) cos(xhat_optimal(3))]*[Body_X;Body_Y]+[xhat_optimal(1);xhat_optimal(2)];
+
+    trajectory_KF(:, ii) = [RC_Sens_KF(1,3); RC_Sens_KF(2,3)];
     
     clf;plot(ellipse_a*(r-s*q)*cos(theta),...
         ellipse_b*(r-s*q)*sin(theta),'k-');hold on
@@ -112,8 +120,13 @@ for ii = 1:N
     patch(RC_Body(1,:),RC_Body(2,:),'g'); alpha(0.2);
     plot(RC_Sens(1,:),RC_Sens(2,:),...
         'o','markersize',2,'markerfacecolor','k')
+    
+    patch(RC_Body_KF(1,:),RC_Body_KF(2,:),'g'); alpha(0.2);
+    plot(RC_Sens_KF(1,:),RC_Sens_KF(2,:),...
+        'o','markersize',2,'markerfacecolor','k')
     axis([-1 1 -1 1]*bb);hold on
     plot(trajectory(1,1:ii),trajectory(2,1:ii),'b-','linewidth',2)
+    plot(trajectory_KF(1,1:ii),trajectory_KF(2,1:ii),'r-','linewidth',2)
     axis square; drawnow;
 end
 

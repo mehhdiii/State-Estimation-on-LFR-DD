@@ -52,7 +52,7 @@ kR = 1e-2; kL = 1e-2;
 P_last = eye(3);
 
 %stochastic setup for observation: 
-R_k = diag([1e-3 1e-3]);
+R_k = diag([1e-6 1e-6 1e-6]);
 
 for ii = 1:N
     
@@ -86,7 +86,8 @@ for ii = 1:N
     Q_k = B*sigma_*B';
     
     %observation: Assume radar observation 
-    y_k = [sqrt(x_pos^2+y_pos^2); atan(y_pos/x_pos)] + sqrt(R_k)*randn(2, 1);
+    H = eye(3);
+    y_k = H*[x_pos; y_pos; phi] + sqrt(R_k)*randn(3, 1);
     
     %KF:
     [xhat_optimal,P_optimal] = KalmanFilter(y_k, Q_k, R_k, xhat_last, P_last, vee, omega, T);

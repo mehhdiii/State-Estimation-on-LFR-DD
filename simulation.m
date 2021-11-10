@@ -1,10 +1,11 @@
-function animation_LMS
+function simulation
 % Goal: the purpose of this program was to
 % keep the robot follow an elliptic contour.
 % An ellipse is generalized enough to include
 % circular contour. Result: Mission achived.
 
 close all
+T = 0.3;
 global s d b r bb q ellipse_a ellipse_b
 N = 1e3;
 d = 2;
@@ -15,7 +16,6 @@ d2 = d/2;
 r = 5*d;
 rw = 1/2;
 q = 0.85;
-T = 0.9;
 ellipse_a = 1;
 ellipse_b = 1.2;
 bb = (ellipse_b+ellipse_a/2)*r;
@@ -48,7 +48,7 @@ RC_Sens = [cos(phi) -sin(phi); ...
     sin(phi) cos(phi)]*[Sen_X; Sen_Y]+[x_pos;y_pos];
 
 %stochastic setup:
-kR = 1e-3; kL = 1e-3;
+kR = 1e-2; kL = 1e-2;
 P_last = eye(3);
 
 %stochastic setup for observation: 

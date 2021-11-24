@@ -34,10 +34,11 @@ theta=linspace(0,2*pi,100); % length is fixed
 x_pos = rand*10;
 y_pos = rand*10;
 phi = (2*rand-1)*pi;
+x_k = [rand*10; rand*10; (2*rand-1)*pi; 0; 0];
 dd = 20/180*pi; % deg to rad (90 deg/sec)
 
 %KF storage variables: 
-xhat_last = [x_pos; y_pos; phi];
+xhat_last = x_k; 
 
 % dev_w = 1e-2;
 % dev_v = 1e-2;
@@ -66,18 +67,18 @@ for ii = 1:N
     Q_input = diag([kR*abs(delR) kL*abs(delL)]);
     
     %calculating velocities:
-    vee = rw*(delR+delL)/2 +randn*sqrt(Q_input(1,1)); % noise added
+    vee = rw*(delR+delL)/2 +randn*sqrt(Q_input(1,1)); % noise added 
     omega = rw*(delR-delL)/2/b +randn*sqrt(Q_input(2,2)); % noise added
     
     %Plant:
     delta_phi = T*omega;
     delta_x = 2*vee/omega*sin(delta_phi/2)*cos(phi+delta_phi/2);
-    delta_y = 2*vee/omega*sin(delta_phi/2)*sin(phi+delta_phi/2);
+    delta_y = 2*vee/omega*sin(delta_phi/2)*sin(phi+delta_phi/2); 
     
-    x_pos = x_pos + delta_x;
-    y_pos = y_pos + delta_y;
-    phi = wrapToPi(phi + delta_phi);
-
+%     x_pos = x_pos + delta_x;
+%     y_pos = y_pos + delta_y;
+%     phi = wrapToPi(phi + delta_phi); 
+    x_k = x_k + [delta_x; delta_y; wrapToPi(phi + delta_phi); vee; omega]; 
     %Propagating input error covariance:
     sigma_ = diag([kR*delR kL*delL]);
     B = [(1/2)*cos(phi+T*omega/2)-(T*vee/(2*b))*sin(phi+T*omega/2), (1/2)*cos(phi+T*omega/2)+(T*vee/(2*b)*sin(phi+T*omega/2));
@@ -121,7 +122,7 @@ for ii = 1:N
     plot(RC_Sens(1,:),RC_Sens(2,:),...
         'o','markersize',2,'markerfacecolor','k')
     
-    patch(RC_Body_KF(1,:),RC_Body_KF(2,:),'g'); alpha(0.2);
+    patch(RC_Body_KF(1,:),RC_Body_KF(2,:),'g'); alpha(0.2); 
     plot(RC_Sens_KF(1,:),RC_Sens_KF(2,:),...
         'o','markersize',2,'markerfacecolor','k')
     axis([-1 1 -1 1]*bb);hold on

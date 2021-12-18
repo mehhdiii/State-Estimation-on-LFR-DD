@@ -7,6 +7,7 @@ function simulation
 close all
 T = 0.3;
 global s d b r bb q ellipse_a ellipse_b
+i = 0
 N = 1e3;
 d = 2;
 b = 2;
@@ -48,7 +49,7 @@ RC_Sens = [cos(phi) -sin(phi); ...
     sin(phi) cos(phi)]*[Sen_X; Sen_Y]+[x_pos;y_pos];
 
 %stochastic setup:
-kR = 1e-2; kL = 1e-2;
+kR = 1e-4; kL = 1e-4;
 P_last = eye(3);
 
 %stochastic setup for observation: 
@@ -127,6 +128,11 @@ for ii = 1:N
     axis([-1 1 -1 1]*bb);hold on
     plot(trajectory(1,1:ii),trajectory(2,1:ii),'b-','linewidth',2)
     plot(trajectory_KF(1,1:ii),trajectory_KF(2,1:ii),'r-','linewidth',2)
+    legend('Original', 'With KF')
     axis square; drawnow;
+    i = i+1;
+    if(i>N/4)
+        break
+    end
 end
 

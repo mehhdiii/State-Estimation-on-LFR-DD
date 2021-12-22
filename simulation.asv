@@ -7,7 +7,7 @@ function simulation
 close all
 T = 0.3;
 global s d b r bb q ellipse_a ellipse_b
-i = 0;
+i = 0
 N = 1e3;
 d = 2;
 b = 2;
@@ -59,11 +59,6 @@ P_last = eye(3);
 R_k = diag([1e-3 1e-3]);
 
 for ii = 1:N
-    
-
-
-
-
     
     %calculate sensor readings:
     [fL,fR,fC]=check_sensors2(RC_Sens_KF(1,:),RC_Sens_KF(2,:));
@@ -137,15 +132,12 @@ for ii = 1:N
     plot(trajectory(1,1:ii),trajectory(2,1:ii),'b-','linewidth',2)
     plot(trajectory_KF(1,1:ii),trajectory_KF(2,1:ii),'r-','linewidth',2)
     legend('Original', 'With KF')
-    axis square; 
-%     drawnow;
+    axis square; drawnow;
     i = i+1;
     if(i>N/4)
         break
     end
-
 end
 
-error = sum((trajectory-trajectory_KF).^2, 2)
-
+trajectory-trajectory_KF
 
